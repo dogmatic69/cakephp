@@ -76,7 +76,7 @@ class CakePlugin {
 		}
 		$config += array('bootstrap' => false, 'routes' => false);
 		if (empty($config['path'])) {
-			foreach (App::path('plugins') as $path) {
+			foreach (App::path('plugins', null, false) as $path) {
 				if (is_dir($path . $plugin)) {
 					self::$_plugins[$plugin] = $config + array('path' => $path . $plugin . DS);
 					break;
@@ -120,7 +120,7 @@ class CakePlugin {
  * @return void
  */
 	public static function loadAll($options = array()) {
-		$plugins = App::objects('plugins');
+		$plugins = App::objects('plugins', null, false);
 		foreach ($plugins as $p) {
 			$opts = isset($options[$p]) ? $options[$p] : null;
 			if ($opts === null && isset($options[0])) {
