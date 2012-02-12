@@ -297,6 +297,7 @@ class App {
 		}
 
 		foreach ($defaults as $type => $default) {
+			App::objects($type, null, false);
 			if (!empty(self::$_packages[$type])) {
 				$path = self::$_packages[$type];
 			}
