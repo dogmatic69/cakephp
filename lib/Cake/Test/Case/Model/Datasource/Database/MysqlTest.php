@@ -125,6 +125,10 @@ class MysqlTest extends CakeTestCase {
 		$result = $this->Dbo->value('', 'integer');
 		$this->assertEquals($expected, $result);
 
+		$expected = 'NULL';
+		$result = $this->Dbo->value('', 'biginteger');
+		$this->assertEquals($expected, $result);
+
 		$expected = "'0'";
 		$result = $this->Dbo->value('', 'boolean');
 		$this->assertEquals($expected, $result);
@@ -196,7 +200,7 @@ class MysqlTest extends CakeTestCase {
 	public function testTinyintCasting() {
 		$this->Dbo->cacheSources = false;
 		$tableName = 'tinyint_' . uniqid();
-		$this->Dbo->rawQuery('CREATE TABLE ' . $this->Dbo->fullTableName($tableName) . ' (id int(11) AUTO_INCREMENT, bool tinyint(1), small_int tinyint(2), primary key(id));');
+		$this->Dbo->rawQuery('CREATE TABLE ' . $this->Dbo->fullTableName($tableName) . ' (id int(11) AUTO_INCREMENT, bool tinyint(1), small_int tinyint(2), big_int bigint(20), primary key(id));');
 
 		$this->model = new CakeTestModel(array(
 			'name' => 'Tinyint', 'table' => $tableName, 'ds' => 'test'
@@ -205,6 +209,7 @@ class MysqlTest extends CakeTestCase {
 		$result = $this->model->schema();
 		$this->assertEquals('boolean', $result['bool']['type']);
 		$this->assertEquals('integer', $result['small_int']['type']);
+		$this->assertEquals('biginteger', $result['big_int']['type']);
 
 		$this->assertTrue((bool)$this->model->save(array('bool' => 5, 'small_int' => 5)));
 		$result = $this->model->find('first');
@@ -477,6 +482,14 @@ class MysqlTest extends CakeTestCase {
 		$expected = 'integer';
 		$this->assertEquals($expected, $result);
 
+		$result = $this->Dbo->column('bigint(20)');
+		$expected = 'biginteger';
+		$this->assertEquals($expected, $result);
+
+		$result = $this->Dbo->column('bigint(20) unsigned');
+		$expected = 'biginteger';
+		$this->assertEquals($expected, $result);
+
 		$result = $this->Dbo->column('tinyint(1)');
 		$expected = 'boolean';
 		$this->assertEquals($expected, $result);
@@ -587,6 +600,24 @@ class MysqlTest extends CakeTestCase {
 		$query = $this->Dbo->getConnection()->prepare($result);
 		$this->assertEquals($query->queryString, $result);
 
+		$schemaD = new CakeSchema(array(
+			'name' => 'AlterTest1',
+			'connection' => 'test',
+			'altertest' => array(
+				'id' => array('type' => 'biginteger', 'null' => false, 'default' => 0),
+				'name' => array('type' => 'string', 'null' => false, 'length' => 50),
+				'group1' => array('type' => 'integer', 'null' => true),
+				'group2' => array('type' => 'integer', 'null' => true)
+		)));
+		$result = $this->Dbo->createSchema($schemaD);
+		$this->assertContains('`id` bigint(20) DEFAULT 0 NOT NULL,', $result);
+		$this->assertContains('`name` varchar(50) NOT NULL,', $result);
+		$this->assertContains('`group1` int(11) DEFAULT NULL', $result);
+		$this->assertContains('`group2` int(11) DEFAULT NULL', $result);
+
+		$query = $this->Dbo->getConnection()->prepare($result);
+		$this->assertEquals($query->queryString, $result);
+
 		// Compare us to ourself.
 		$this->assertEquals(array(), $schemaC->compare($schemaC));
 
@@ -601,6 +632,11 @@ class MysqlTest extends CakeTestCase {
 
 		$query = $this->Dbo->getConnection()->prepare($result);
 		$this->assertEquals($query->queryString, $result);
+
+
+		$result = $this->Dbo->alterSchema($schemaD->compare($schemaA));
+		$this->assertContains("ALTER TABLE $table", $result);
+		$this->assertContains('CHANGE `id` `id` bigint(20) DEFAULT 0 NOT NULL;', $result);
 	}
 
 /**
@@ -2864,6 +2900,50 @@ class MysqlTest extends CakeTestCase {
 		$this->Dbo->columns = $restore;
 
 		$data = array(
+			'name' => 'bigint_field',
+			'type' => 'biginteger',
+			'default' => '',
+			'null' => false,
+		);
+
+		$this->Dbo->columns = array('biginteger' => array('name' => 'bigint', 'limit' => '20', 'formatter' => 'intval'), );
+		$result = $this->Dbo->buildColumn($data);
+		$expected = '`bigint_field` bigint(20) NOT NULL';
+		$this->assertEquals($expected, $result);
+
+		$this->Dbo->fieldParameters['param'] = array(
+			'value' => 'COLLATE',
+			'quote' => false,
+			'join' => ' ',
+			'column' => 'Collate',
+			'position' => 'beforeDefault',
+			'options' => array('GOOD', 'OK')
+		);
+		$data = array(
+			'name' => 'bigint_field',
+			'type' => 'biginteger',
+			'default' => '',
+			'null' => false,
+			'param' => 'BAD'
+		);
+		$result = $this->Dbo->buildColumn($data);
+		$expected = '`bigint_field` bigint(20) NOT NULL';
+		$this->assertEquals($expected, $result);
+
+		$data = array(
+			'name' => 'bigint_field',
+			'type' => 'biginteger',
+			'default' => '',
+			'null' => false,
+			'param' => 'GOOD'
+		);
+		$result = $this->Dbo->buildColumn($data);
+		$expected = '`bigint_field` bigint(20) COLLATE GOOD NOT NULL';
+		$this->assertEquals($expected, $result);
+
+		$this->Dbo->columns = $restore;
+
+		$data = array(
 			'name' => 'created',
 			'type' => 'timestamp',
 			'default' => 'current_timestamp',
@@ -3251,6 +3331,10 @@ class MysqlTest extends CakeTestCase {
 	public function testIntrospectType() {
 		$this->assertEquals('integer', $this->Dbo->introspectType(0));
 		$this->assertEquals('integer', $this->Dbo->introspectType(2));
+		$this->assertEquals('integer', $this->Dbo->introspectType(4294967295));
+		$this->assertEquals('integer', $this->Dbo->introspectType(-2147483648));
+		$this->assertEquals('biginteger', $this->Dbo->introspectType(-2147483649));
+		$this->assertEquals('biginteger', $this->Dbo->introspectType(4294967296));
 		$this->assertEquals('string', $this->Dbo->introspectType('2'));
 		$this->assertEquals('string', $this->Dbo->introspectType('2.2'));
 		$this->assertEquals('float', $this->Dbo->introspectType(2.2));
@@ -3266,8 +3350,14 @@ class MysqlTest extends CakeTestCase {
 		$data = array(2);
 		$this->assertEquals('integer', $this->Dbo->introspectType($data));
 
+		$data = array(-2147483649);
+		$this->assertEquals('biginteger', $this->Dbo->introspectType($data));
+
 		$data = array('2');
 		$this->assertEquals('integer', $this->Dbo->introspectType($data));
+
+		$data = array('4294967296');
+		$this->assertEquals('biginteger', $this->Dbo->introspectType($data));
 
 		$data = array('string');
 		$this->assertEquals('string', $this->Dbo->introspectType($data));
@@ -3356,6 +3446,21 @@ class MysqlTest extends CakeTestCase {
 
 		$result = $this->Dbo->value('0x123', 'integer');
 		$this->assertEquals("'0x123'", $result);
+
+		$result = $this->Dbo->value(-2147483649, 'biginteger');
+		$this->assertEquals(-2147483649, $result);
+
+		$result = $this->Dbo->value('-2147483649', 'biginteger');
+		$this->assertEquals('-2147483649', $result);
+
+		$result = $this->Dbo->value(4294967296, 'biginteger');
+		$this->assertEquals(4294967296, $result);
+
+		$result = $this->Dbo->value('4294967296', 'biginteger');
+		$this->assertEquals('4294967296', $result);
+
+		$result = $this->Dbo->value('04294967296', 'biginteger');
+		$this->assertEquals("'04294967296'", $result);
 
 		$result = $this->Dbo->value(1.234, 'float');
 		$this->assertEquals(1.234, $result);

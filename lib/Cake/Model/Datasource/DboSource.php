@@ -2893,6 +2893,7 @@ class DboSource extends DataSource {
 
 		$pdoMap = array(
 			'integer' => PDO::PARAM_INT,
+			'biginteger' => PDO::PARAM_INT,
 			'float' => PDO::PARAM_STR,
 			'boolean' => PDO::PARAM_BOOL,
 			'string' => PDO::PARAM_STR,
@@ -3049,7 +3050,7 @@ class DboSource extends DataSource {
 			$out .= '(' . $length . ')';
 		}
 
-		if (($column['type'] === 'integer' || $column['type'] === 'float') && isset($column['default']) && $column['default'] === '') {
+		if (($column['type'] === 'integer' || $column['type'] === 'biginteger' || $column['type'] === 'float') && isset($column['default']) && $column['default'] === '') {
 			$column['default'] = null;
 		}
 		$out = $this->_buildFieldParameters($out, $column, 'beforeDefault');
@@ -3175,6 +3176,11 @@ class DboSource extends DataSource {
  * @return void
  */
 	public function introspectType($value) {
+		$bigInt = array(
+			'low' => -2147483648,
+			'high' => 4294967295
+		);
+
 		if (!is_array($value)) {
 			if (is_bool($value)) {
 				return 'boolean';
@@ -3183,6 +3189,9 @@ class DboSource extends DataSource {
 				return 'float';
 			}
 			if (is_int($value) && intval($value) === $value) {
+				if ($value < $bigInt['low'] || $value > $bigInt['high']) {
+					return 'biginteger';
+				}
 				return 'integer';
 			}
 			if (is_string($value) && strlen($value) > 255) {
@@ -3191,35 +3200,43 @@ class DboSource extends DataSource {
 			return 'string';
 		}
 
-		$isAllFloat = $isAllInt = true;
-		$containsFloat = $containsInt = $containsString = false;
+		$stringCount = $floatCount = $intCount = $bigIntCount = 0;
+		$total = count($value);
 		foreach ($value as $key => $valElement) {
 			$valElement = trim($valElement);
-			if (!is_float($valElement) && !preg_match('/^[\d]+\.[\d]+$/', $valElement)) {
-				$isAllFloat = false;
-			} else {
-				$containsFloat = true;
+			if (!(!is_float($valElement) && !preg_match('/^[\d]+\.[\d]+$/', $valElement))) {
+				$floatCount++;
 				continue;
 			}
-			if (!is_int($valElement) && !preg_match('/^[\d]+$/', $valElement)) {
-				$isAllInt = false;
-			} else {
-				$containsInt = true;
+
+			$intValElement = intval($valElement);
+			if ($intValElement != $valElement || !preg_match('/^[\d]+$/', abs($valElement))) {
+				$isAllInt = $isAllBigInt = false;
+			} elseif (abs($valElement) > 0) {
+				$intCount++;
+				if ($intValElement < $bigInt['low'] || $intValElement > $bigInt['high']) {
+					$bigIntCount++;
+				}
 				continue;
 			}
-			$containsString = true;
+
+			$stringCount++;
 		}
 
-		if ($isAllFloat) {
+		if ($floatCount === $total) {
 			return 'float';
 		}
-		if ($isAllInt) {
+		if ($bigIntCount === $total) {
+			return 'biginteger';
+		}
+		if ($intCount === $total) {
 			return 'integer';
 		}
 
-		if ($containsInt && !$containsString) {
+		if (($bigIntCount + $intCount) > 0 && $stringCount === 0) {
 			return 'integer';
 		}
+
 		return 'string';
 	}
 

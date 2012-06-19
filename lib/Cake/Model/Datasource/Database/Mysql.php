@@ -109,6 +109,7 @@ class Mysql extends DboSource {
 		'string' => array('name' => 'varchar', 'limit' => '255'),
 		'text' => array('name' => 'text'),
 		'integer' => array('name' => 'int', 'limit' => '11', 'formatter' => 'intval'),
+		'biginteger' => array('name' => 'bigint', 'limit' => '20', 'formatter' => 'intval'),
 		'float' => array('name' => 'float', 'formatter' => 'floatval'),
 		'datetime' => array('name' => 'datetime', 'format' => 'Y-m-d H:i:s', 'formatter' => 'date'),
 		'timestamp' => array('name' => 'timestamp', 'format' => 'Y-m-d H:i:s', 'formatter' => 'date'),
@@ -645,6 +646,9 @@ class Mysql extends DboSource {
 		}
 		if (($col === 'tinyint' && $limit == 1) || $col === 'boolean') {
 			return 'boolean';
+		}
+		if (strpos($col, 'bigint') !== false) {
+			return 'biginteger';
 		}
 		if (strpos($col, 'int') !== false) {
 			return 'integer';
