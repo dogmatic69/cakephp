@@ -3181,6 +3181,8 @@ class DboSource extends DataSource {
 			'high' => 4294967295
 		);
 
+		$x64 = (9223372036854775807 === intval(9223372036854775807));
+
 		if (!is_array($value)) {
 			if (is_bool($value)) {
 				return 'boolean';
@@ -3189,7 +3191,7 @@ class DboSource extends DataSource {
 				return 'float';
 			}
 			if (is_int($value) && intval($value) === $value) {
-				if ($value < $bigInt['low'] || $value > $bigInt['high']) {
+				if ($x64 && ($value < $bigInt['low'] || $value > $bigInt['high'])) {
 					return 'biginteger';
 				}
 				return 'integer';
@@ -3214,7 +3216,7 @@ class DboSource extends DataSource {
 				$isAllInt = $isAllBigInt = false;
 			} elseif (abs($valElement) > 0) {
 				$intCount++;
-				if ($intValElement < $bigInt['low'] || $intValElement > $bigInt['high']) {
+				if ($x64 && ($intValElement < $bigInt['low'] || $intValElement > $bigInt['high'])) {
 					$bigIntCount++;
 				}
 				continue;
