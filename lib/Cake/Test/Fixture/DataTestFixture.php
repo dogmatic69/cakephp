@@ -40,6 +40,7 @@ class DataTestFixture extends CakeTestFixture {
 		'id' => array('type' => 'integer', 'key' => 'primary'),
 		'count' => array('type' => 'integer', 'default' => 0),
 		'float' => array('type' => 'float', 'default' => 0),
+		'bigint' => array('type' => 'biginteger'),
 		'created' => array('type' => 'datetime', 'default' => null),
 		'updated' => array('type' => 'datetime', 'default' => null)
 	);
@@ -53,6 +54,7 @@ class DataTestFixture extends CakeTestFixture {
 		array(
 			'count' => 2,
 			'float' => 2.4,
+			'bigint' => 9223372036854775806,
 			'created' => '2010-09-06 12:28:00',
 			'updated' => '2010-09-06 12:28:00'
 		)

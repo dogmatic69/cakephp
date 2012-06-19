@@ -198,6 +198,32 @@ class ModelWriteTest extends BaseModelTest {
 	}
 
 /**
+ * test testBigIntFieldValue method
+ *
+ * @return void
+ */
+	public function testBigIntFieldValues() {
+		$this->loadFixtures('DataTest');
+		$TestModel = new DataTest();
+
+		$expected = 9223372036854775806;
+		$TestModel->id = 1;
+		$result = $TestModel->field('bigint');
+		$this->assertEquals($expected, $result);
+
+		$data = array(
+			'bigint' => -9223372036854775807,
+			'id' => 9223372036854775806
+		);
+		$TestModel->create();
+		$TestModel->save($data);
+
+		$result = $TestModel->read(array('id', 'bigint'), 2147483647);
+		$this->assertEquals(2147483647, $result['DataTest']['id']);
+		$this->assertEquals(-9223372036854775807, $result['DataTest']['bigint']);
+	}
+
+/**
  * Tests validation parameter order in custom validation methods
  *
  * @return void
