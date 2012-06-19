@@ -86,6 +86,70 @@ class ModelReadTest extends BaseModelTest {
 	}
 
 /**
+ * testGroupByWithHaving method
+ *
+ * Test for using HAVING as part of the group by clause for mysql
+ */
+	public function testGroupByWithHaving() {
+		$message = 'Postgres, Oracle, SQLite and SQL Server have strict GROUP BY and are incompatible with this test.';
+		$this->skipIf(!$this->db instanceof Mysql, $message);
+
+		$this->loadFixtures('Project', 'Product', 'Thread', 'Message', 'Bid');
+		$Thread = new Thread();
+		$Product = new Product();
+
+		$result = $Thread->find('all', array(
+			'group' => 'Thread.project_id HAVING Thread.id = 1',
+			'order' => 'Thread.id ASC'
+		));
+		$expected = array(
+			array(
+				'Thread' => array(
+					'id' => '1',
+					'project_id' => '1',
+					'name' => 'Project 1, Thread 1'
+				),
+				'Project' => array(
+					'id' => '1',
+					'name' => 'Project 1'
+				),
+				'Message' => array(
+					array(
+						'id' => '1',
+						'thread_id' => '1',
+						'name' => 'Thread 1, Message 1'
+			))));
+		$this->assertEquals($expected, $result);
+
+		$Thread->virtualFields = array(
+			'the_project' => 'Thread.project_id'
+		);
+		$result = $Thread->find('all', array(
+			'group' => 'Thread.project_id HAVING Thread__the_project = 1',
+			'order' => 'Thread.id ASC'
+		));
+		$expected = array(
+			array(
+				'Thread' => array(
+					'id' => '1',
+					'project_id' => '1',
+					'name' => 'Project 1, Thread 1',
+					'the_project' => '1'
+				),
+				'Project' => array(
+					'id' => '1',
+					'name' => 'Project 1'
+				),
+				'Message' => array(
+					array(
+						'id' => '1',
+						'thread_id' => '1',
+						'name' => 'Thread 1, Message 1'
+			))));
+		$this->assertEquals($expected, $result);
+	}
+
+/**
  * testGroupBy method
  *
  * These tests will never pass with Postgres or Oracle as all fields in a select must be
