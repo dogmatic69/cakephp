@@ -27,7 +27,7 @@ if (!defined('E_DEPRECATED')) {
 if (!defined('E_USER_DEPRECATED')) {
 	define('E_USER_DEPRECATED', E_USER_NOTICE);
 }
-error_reporting(E_ALL & ~E_DEPRECATED);
+error_reporting(E_ALL);
 
 if (!defined('CAKE_CORE_INCLUDE_PATH')) {
 	define('CAKE_CORE_INCLUDE_PATH', dirname(dirname(__FILE__)));

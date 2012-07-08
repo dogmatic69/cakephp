@@ -50,7 +50,7 @@
  */
 	Configure::write('Error', array(
 		'handler' => 'ErrorHandler::handleError',
-		'level' => E_ALL & ~E_DEPRECATED,
+		'level' => E_ALL,
 		'trace' => true
 	));
 
@@ -226,7 +226,7 @@
 	Configure::write('Acl.database', 'default');
 
 /**
- * Uncomment this line and correct your server timezone to fix 
+ * Uncomment this line and correct your server timezone to fix
  * any date & time related errors.
  */
 	//date_default_timezone_set('UTC');
