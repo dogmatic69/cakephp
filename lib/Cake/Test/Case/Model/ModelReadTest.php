@@ -8023,6 +8023,28 @@ class ModelReadTest extends BaseModelTest {
 			)
 		);
 		$this->assertTrue(is_array($result) && !empty($result));
+		
+		$result = $Article->find(
+			'all',
+			array(
+				'conditions' => array(
+					array('Article.id !=' => array(1)),
+					array('Article.id !=' => array(2)),
+				)
+			)
+		);
+		$this->assertTrue(is_array($result) && !empty($result));
+		
+		$result = $Article->find(
+			'all',
+			array(
+				'conditions' => array(
+					array('Article.id != ' => array(1)),
+					array('Article.id != ' => array(2)),
+				)
+			)
+		);
+		$this->assertTrue(is_array($result) && !empty($result));
 	}
 
 /**
